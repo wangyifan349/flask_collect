@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Browser Information</title>
+<script>
+// 引入一个简单的哈希函数库，如 https://github.com/darkskyapp/string-hash
+// 如果您不想引入外部库，可以使用简单的哈希函数实现
+function simpleHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        var char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // 转换为32位整数
+    }
+    return hash;
+}
+
+// 函数用于收集Canvas指纹
+function getCanvasFingerprint() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 16;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f60';
+    ctx.fillRect(2, 2, 12, 12);
+    ctx.fillStyle = '#069';
+    ctx.font = '8px Arial';
+    ctx.fillText('C', 2, 10);
+    var dataURL = canvas.toDataURL();
+    return simpleHash(dataURL).toString();
+}
+
+// 函数用于发送数据到后端
+function sendBrowserInfo() {
+    var browserInfo = {
+        canvasFingerprint: getCanvasFingerprint(),
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        timeZoneOffset: new Date().getTimezoneOffset()
+    };
+
+    fetch('/collect-browser-info', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(browserInfo)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+// 在页面加载时发送浏览器信息
+window.onload = function() {
+    sendBrowserInfo();
+};
+</script>
+</head>
+<body>
+<h1>Collecting Browser Information</h1>
+</body>
+</html>
